@@ -1,0 +1,24 @@
+input
+1 1
+2 1
+output
+1 2
+2 2
+pulse
+1
+digest
+t1
+
+
+
+
+input
+2 2
+3 1
+output
+2 3
+3 2
+pulse
+2
+digest
+t2
