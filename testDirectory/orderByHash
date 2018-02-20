@@ -5,7 +5,7 @@ output
 1 2
 2 2
 pulse
-2
+1
 digest
 t1
 
@@ -27,9 +27,9 @@ output
 1 3
 2 2
 pulse
-3
+1
 digest
 t3
 
 expected
-t2 t1 t3
+t1 t3 t2

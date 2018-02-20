@@ -13,9 +13,11 @@ function compareTransactions(transaction1, transaction2) {
     if (transaction1.pulse > transaction2.pulse) {
         return false;
     }
+    var smallerThan=false;
     for (var i in transaction1.output) {
         for (var j in transaction2.input) {
             if (pairsEqual(transaction1.output[i], transaction2.input[j])) {
+                //smallerThan=true;
                 return true;
             }
         }
@@ -23,11 +25,18 @@ function compareTransactions(transaction1, transaction2) {
     for (var i in transaction1.input) {
         for (var j in transaction2.output) {
             if (pairsEqual(transaction1.input[i], transaction2.output[j])) {
-                return false;
+               /* if(smallerThan) {
+                    console.error('incompatible transactions');
+                    return;
+                }*/
+                return false;s
             }
 
         }
     }
+   /* if(smallerThan){
+        return true;
+    }*/
     if (transaction1.digest < transaction2.digest) {
         return true;
     }

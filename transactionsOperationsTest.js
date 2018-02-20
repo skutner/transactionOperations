@@ -1,53 +1,78 @@
 const sort=require('./transactionsOperations').sortTransactions;
 const fs=require('fs');
 const readline=require('readline');
-
-function readTransactions(path){
-    const EventEmitter=require('events').EventEmitter;
-    const rl=readline.createInterface({
-        input: fs.createReadStream(path,'utf-8'),
-        output: process.stdout
-    });
+const path=require('path');
+const assert=require('assert');
+var events=require('events');
+function TransactionSortTester(testDirectory){
+    var self=this;
+    self.testDirectory=testDirectory;
+    var rl;
+    var EventEmitter=new events.EventEmitter();
     var transactions=[];
     var isFirst=true;
-    var wasFirst=false;
     var isInput = false;
     var isOutput=false;
     var isPulse=false;
     var isDigest=false;
-    var wasDigest=false;
+    var isExpected=false;
     var transaction={};
+    var expected;
     var input={};
     var output={};
+    function getFiles(testDirectory){
+        var memberFiles=fs.readdirSync(testDirectory);
+        for(var i=0; i<memberFiles.length; i++){
+            memberFiles[i]=path.resolve(self.testDirectory+'\\'+memberFiles[i]);
+        }
+        return memberFiles;
+    }
+    var files=getFiles(self.testDirectory);
+    function readFromFile(testFile){
+        rl=readline.createInterface({
+            input: fs.createReadStream(testFile,'utf-8'),
+            output: process.stdout
+        });
+        rl.on('line',processLine);
+        rl.on('close',getTransactions);
+    }
     function processLine(line) {
-        wasFirst=true;
+        if(line === ''){
+            return;
+        }
         if(line === 'input'){
             if(!isFirst){
-                wasFirst=false;
-                if(wasDigest){
-                    wasDigest=false;
-                }
-                else{
-                    var artificialDigest='T'+transaction.input.key.name;
-                    transaction[digest]=artificialDigest;
-                }
                 transactions.push(transaction);
             }
             transaction={};
+            input={};
+            output={};
             isInput=true;
             isFirst=false;
             return;
         }
         if(line === 'output'){
+            isInput=false;
             isOutput=true;
             return;
         }
         if(line === 'pulse'){
+            isOutput=false;
             isPulse=true;
+            return;
         }
         if(line === 'digest'){
+            isPulse=false;
             isDigest=true;
-            wasDigest=true;
+            return;
+        }
+        if(line === 'expected'){
+            isFirst=true;
+            isInput = false;
+            isOutput=false;
+            isPulse=false;
+            isDigest=false;
+            isExpected=true;
             return;
         }
         if(isInput){
@@ -58,7 +83,6 @@ function readTransactions(path){
             key.version=nameVersionPair[1];
             input[keyName]=key;
             transaction.input=input;
-            isInput=false;
             return;
         }
         if(isOutput){
@@ -69,39 +93,46 @@ function readTransactions(path){
             key.version=nameVersionPair[1];
             output[keyName]=key;
             transaction.output=output;
-            isOutput=false;
             return;
         }
         if(isPulse){
             transaction.pulse=line;
-            isPulse=false;
             return;
         }
         if(isDigest){
             transaction.digest=line;
-            isDigest=false;
+            return;
+        }
+        if(isExpected){
+            expected=line.split(' ');
+            isExpected=false;
             return;
         }
     }
-    rl.on('line',processLine);
-    rl.on('close',getTransactions);
-
     function getTransactions(){
-        if(wasFirst){
-            if(!wasDigest){
-                for(var n in transaction.input) {
-                    var artificialDigest = 'T' + n;
-                    transaction.digest = artificialDigest;
-                }
-            }
-        }
         transactions.push(transaction);
-        for(var i=0; i<transactions.length; i++){
-            process.stdout.write(transactions[i].digest+' ');
-        }
-        console.log();
+        testResults();
     }
+    function testResults(){
+        sort(transactions);
+        var result=[];
+        for(var i=0; i<transactions.length; i++){
+            result.push(transactions[i].digest);
+        }
+        transactions=[];
+        if(assert.deepEqual(result,expected) == undefined){
+            console.log('Test passed');
+        }
+        EventEmitter.emit('done');
+    }
+    EventEmitter.on('done',function(){
+        if(files.length){
+            var file=files.shift();
+            readFromFile(file);
+        }
 
+    });
+    readFromFile(files.shift());
 }
-var path='./transactions.in';
-readTransactions(path);
+
+var tester=new TransactionSortTester('./testDirectory');
