@@ -1,5 +1,5 @@
-function pairsEqual(pair1, pair2) {
-    if (pair1.name === pair2.name && pair1.version === pair2.version) {
+function pairSmallerOrEqual(pair1, pair2) {
+    if (pair1.name === pair2.name && pair1.version <= pair2.version) {
         return true;
     }
     return false;
@@ -16,27 +16,27 @@ function compareTransactions(transaction1, transaction2) {
     var smallerThan=false;
     for (var i in transaction1.output) {
         for (var j in transaction2.input) {
-            if (pairsEqual(transaction1.output[i], transaction2.input[j])) {
-                //smallerThan=true;
+            if (pairSmallerOrEqual(transaction1.output[i], transaction2.input[j])) {
+                smallerThan=true;
                 return true;
             }
         }
     }
     for (var i in transaction1.input) {
         for (var j in transaction2.output) {
-            if (pairsEqual(transaction1.input[i], transaction2.output[j])) {
-               /* if(smallerThan) {
+            if (pairSmallerOrEqual(transaction1.input[i], transaction2.output[j])) {
+                if(smallerThan) {
                     console.error('incompatible transactions');
                     return;
-                }*/
+                }
                 return false;s
             }
 
         }
     }
-   /* if(smallerThan){
+    if(smallerThan){
         return true;
-    }*/
+    }
     if (transaction1.digest < transaction2.digest) {
         return true;
     }
